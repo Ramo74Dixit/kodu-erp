@@ -7,6 +7,9 @@ const studentRoutes = require('./routes/studentRoutes');
 const authRoutes = require('./routes/authRoutes');
 const courseRoutes= require('./routes/courseRoutes')
 const batchRoutes = require('./routes/batchRoutes')
+const attendanceRoutes= require('./routes/attendanceRoutes')
+const feeRoutes= require('./routes/feeRoutes')
+const complaintRoutes= require('./routes/complaintRoutes')
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -27,6 +30,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/batches', batchRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/fees', feeRoutes);
+app.use('/api/complaints', complaintRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
