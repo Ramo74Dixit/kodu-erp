@@ -20,7 +20,17 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors({ origin: 'https://kodu-erp.onrender.com' }));
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests from localhost (development) and onrender (production)
+    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+}));
+
 app.use(express.json());
 
 // Routes
@@ -33,6 +43,7 @@ app.use('/api/batches', batchRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/complaints', complaintRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
