@@ -20,7 +20,7 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: 'https://kodu-erp.onrender.com' }));
 app.use(express.json());
 
 // Routes
