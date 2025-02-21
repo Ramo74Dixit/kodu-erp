@@ -24,7 +24,16 @@ const createAdmin = async (req, res) => {
     await admin.save();
     res.status(201).json({ message: 'Admin created successfully' });
 };
-
+const getPendingUsers = async (req, res) => {
+    try {
+        // Fetch users who are pending approval (trainer or counsellor)
+        const users = await User.find({ status: 'pending', role: { $in: ['trainer', 'counsellor'] } });
+        res.status(200).json(users); // Return the list of users
+    } catch (error) {
+        console.error('Error fetching pending users:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
 const approveUser = async(req,res)=>{
     const {userId}= req.params;
     const {action} = req.body;
@@ -42,4 +51,4 @@ const approveUser = async(req,res)=>{
     return res.status(200).json({message:`User ${action}d successfully`});
 }
 
-module.exports={approveUser,createAdmin};
+module.exports={approveUser,createAdmin,getPendingUsers};
