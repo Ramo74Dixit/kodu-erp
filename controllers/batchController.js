@@ -11,6 +11,7 @@ const createBatch = async (req, res) => {
         if (!course) {
             return res.status(400).json({ message: 'Course not found' });
         }
+
         const newBatch = new Batch({
             batchName,
             course: courseId,
@@ -18,11 +19,14 @@ const createBatch = async (req, res) => {
             endDate,
             timings: { startTime, endTime },
             students,
-            trainer: req.user.userId  
+            trainer: req.user.userId  // The trainer is now saved as the user's ID
         });
+
         await newBatch.save();
+
+        // Adding the new batch to each subject associated with the course
         course.subjects.forEach(subject => {
-            subject.batches.push(newBatch._id);  // Add this batch to all subjects
+            subject.batches.push(newBatch._id);
         });
         await course.save();
 
@@ -36,9 +40,7 @@ const createBatch = async (req, res) => {
     }
 };
 
-module.exports = { createBatch };
-
-
+// Add students to a batch
 const addStudentsToBatch = async (req, res) => {
     const { batchId, studentIds } = req.body;
     try {
@@ -46,10 +48,12 @@ const addStudentsToBatch = async (req, res) => {
         if (!batch) {
             return res.status(400).json({ message: 'Batch not found' });
         }
+
         const students = await User.find({ '_id': { $in: studentIds } });
         if (students.length !== studentIds.length) {
             return res.status(400).json({ message: 'Some students not found' });
         }
+
         batch.students.push(...studentIds);
         await batch.save();
 
@@ -63,4 +67,29 @@ const addStudentsToBatch = async (req, res) => {
     }
 };
 
-module.exports = { createBatch,addStudentsToBatch };
+// New route to get all batches by trainer
+const getBatchesByTrainer = async (req, res) => {
+    try {
+        // Assuming `trainerId` is passed in as a URL parameter
+        const trainerId = req.user.userId;  // This is from the authenticated user's token
+
+        const batches = await Batch.find({ trainer: trainerId })
+            .populate('course')  // Optionally populate course details
+            .populate('students')  // Optionally populate students' details
+            .exec();
+
+        if (!batches || batches.length === 0) {
+            return res.status(404).json({ message: 'No batches found for this trainer' });
+        }
+
+        res.status(200).json({
+            message: 'Trainer batches fetched successfully',
+            batches: batches
+        });
+    } catch (error) {
+        console.error('Error fetching batches for trainer:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+module.exports = { createBatch, addStudentsToBatch, getBatchesByTrainer };
