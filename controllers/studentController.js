@@ -185,4 +185,23 @@ const updateProfile = async (req, res) => {
     }
 };
 
-module.exports = { approveStudent ,getPendingStudents , approveAllPendingStudents,updateProfile};
+const getAllStudents = async (req, res) => {
+    const role = req.user.role;
+
+    // Check if the logged-in user is a counsellor
+    if (role !== 'counsellor' && role !== 'admin' && role !== 'trainer') {
+        return res.status(403).json({ message: "Only counsellor or admin can view all students" });
+    }
+
+    try {
+        const allStudents = await User.find({ role: 'student' });
+        if (allStudents.length === 0) {
+            return res.status(200).json({ message: "No students found" });
+        }
+        res.status(200).json(allStudents);
+    } catch (error) {
+        console.error('Error fetching students:', error);
+        return res.status(500).json({ message: "An error occurred while fetching students" });
+    }
+};
+module.exports = { approveStudent ,getPendingStudents,getAllStudents, approveAllPendingStudents,updateProfile};
