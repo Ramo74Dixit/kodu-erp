@@ -24,5 +24,14 @@ const addCourse = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+const getCourses = async (req, res) => {
+    try {
+        const courses = await Course.find();  // Fetch courses from the database
+        res.json(courses);  // Send back the courses data
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        res.status(500).json({ message: 'Error fetching courses' });
+    }
+};
 
-module.exports = { addCourse };
+module.exports = { addCourse,getCourses };
