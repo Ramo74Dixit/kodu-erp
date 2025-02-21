@@ -92,4 +92,24 @@ const getBatchesByTrainer = async (req, res) => {
     }
 };
 
-module.exports = { createBatch, addStudentsToBatch, getBatchesByTrainer };
+const getStudentsByBatch = async (req, res) => {
+    const { batchId } = req.params; // Get batchId from URL parameters
+
+    try {
+        const batch = await Batch.findById(batchId).populate('students'); // Populate the students field
+
+        if (!batch) {
+            return res.status(404).json({ message: 'Batch not found' });
+        }
+
+        res.status(200).json({
+            message: 'Students fetched successfully',
+            students: batch.students // Return the students associated with the batch
+        });
+    } catch (error) {
+        console.error('Error fetching students by batch:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+module.exports = { createBatch, addStudentsToBatch, getBatchesByTrainer,getStudentsByBatch };
