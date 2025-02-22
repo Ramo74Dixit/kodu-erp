@@ -75,11 +75,23 @@ const createPaymentOrder = async (req, res) => {
             // Log the successful order creation for debugging purposes
             console.log('Razorpay order created successfully:', order);
 
+            // Check if the order ID and URLs are valid
+            if (!order.id) {
+                return res.status(500).json({ message: 'Failed to create order. No order ID returned.' });
+            }
+
+            const paymentLink = `https://pay.razorpay.com/${order.id}`;
+            const qrCodeUrl = `https://qrpay.razorpay.com/${order.id}`;
+
+            // Log the URLs for debugging
+            console.log('Payment Link:', paymentLink);
+            console.log('QR Code URL:', qrCodeUrl);
+
             // Return the order details (including the payment link and QR code URL)
             res.status(200).json({
                 orderId: order.id,
-                short_url: `https://pay.razorpay.com/${order.id}`,  // Example of a Razorpay payment link
-                qr_code_url: `https://qrpay.razorpay.com/${order.id}`,  // Example of QR code URL
+                short_url: paymentLink,  // Razorpay payment link
+                qr_code_url: qrCodeUrl,  // Razorpay QR code URL
                 studentId: studentId,
                 amount: amount,
                 currency: currency
@@ -90,6 +102,7 @@ const createPaymentOrder = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 

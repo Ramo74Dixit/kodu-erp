@@ -204,4 +204,29 @@ const getAllStudents = async (req, res) => {
         return res.status(500).json({ message: "An error occurred while fetching students" });
     }
 };
-module.exports = { approveStudent ,getPendingStudents,getAllStudents, approveAllPendingStudents,updateProfile};
+
+const getStudentDetails = async (req, res) => {
+    const { userId } = req.params; // Get userId from request parameters
+    const role = req.user.role;
+
+    // Check if the logged-in user has permission (can be counsellor, admin, or trainer
+
+    try {
+        // Find the student by userId
+        const student = await User.findById(userId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Send the student details as a response
+        res.status(200).json({
+            message: 'Student details retrieved successfully',
+            student: student
+        });
+    } catch (error) {
+        console.error('Error fetching student details:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+module.exports = { approveStudent ,getPendingStudents,getAllStudents,getStudentDetails, approveAllPendingStudents,updateProfile};
