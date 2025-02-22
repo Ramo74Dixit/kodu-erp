@@ -207,43 +207,66 @@ const getAllStudents = async (req, res) => {
 };
 
 const getStudentDetails = async (req, res) => {
-    const { userId } = req.params; // Get userId from request parameters
-    const role = req.user.role; // Check the role (optional)
-  
-    try {
-      // Fetch student and batch data concurrently using Promise.all
-      const [student, batch] = await Promise.all([
-        User.findById(userId).select('name email status enrolledCourses'), // Only fetch necessary fields
-        Batch.findOne({ students: userId }).select('batchName course startDate endDate timings trainer') // Fetch related batch details
-      ]);
-  
-      if (!student) {
-        return res.status(404).json({ message: 'Student not found' });
-      }
-  
-      if (!batch) {
-        return res.status(404).json({ message: 'Batch not found' });
-      }
-  
-      // Combine student and batch data and send the response
-      res.status(200).json({
-        message: 'Student details retrieved successfully',
-        student: {
-          ...student.toObject(), // Convert the student document to a plain object
-          batchId: batch._id, // Include the batchId
-          batchName: batch.batchName, // Include batch name
-          course: batch.course, // Course ID related to the batch
-          startDate: batch.startDate, // Start date of the batch
-          endDate: batch.endDate, // End date of the batch
-          timings: batch.timings, // Timings of the batch
-          trainer: batch.trainer, // Trainer teaching the batch
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching student details:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+  const { userId } = req.params; // Get userId from request parameters
+  const role = req.user.role; // Check the role (optional)
+
+  try {
+    // Start timer for performance monitoring
+    const startTime = Date.now();
+
+    // Fetch all necessary student and batch data concurrently using Promise.all
+    const [student, batch] = await Promise.all([
+      // Use lean() to make the query faster
+      User.findById(userId)
+        .select('name email password role status approvedBy phoneNumber whatsappNumber parentPhoneNumber enrolledCourses education createdAt')
+        .lean(), // Fetch data as plain JS objects for speed
+      Batch.findOne({ students: userId })
+        .select('batchName course startDate endDate timings trainer batchLocation studentCount courseMaterial')
+        .lean() // Use lean to speed up batch data retrieval
+    ]);
+
+    // Check if student or batch data is missing
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
     }
-  };
-  
+
+    if (!batch) {
+      return res.status(404).json({ message: 'Batch not found' });
+    }
+
+    // Combine student and batch data efficiently
+    const updatedStudent = {
+      ...student, // Spread the student data
+      batchId: batch._id, // Include the batchId
+      batchName: batch.batchName, // Include batch name
+      course: batch.course, // Include course details
+      startDate: batch.startDate, // Start date
+      endDate: batch.endDate, // End date
+      timings: batch.timings, // Timings of the batch
+      trainer: batch.trainer, // Batch trainer
+      batchLocation: batch.batchLocation, // Location
+      studentCount: batch.studentCount, // Number of students in the batch
+      courseMaterial: batch.courseMaterial // Course materials
+    };
+
+    // End timer for performance monitoring
+    const endTime = Date.now();
+    const timeTaken = endTime - startTime; // Calculate the time taken
+
+    console.log(`API call took ${timeTaken}ms`);
+
+    // Send the final response
+    res.status(200).json({
+      message: 'Student details retrieved successfully',
+      updatedProfile: updatedStudent
+    });
+    
+  } catch (error) {
+    console.error('Error fetching student details:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
 
 module.exports = { approveStudent ,getPendingStudents,getAllStudents,getStudentDetails, approveAllPendingStudents,updateProfile};
