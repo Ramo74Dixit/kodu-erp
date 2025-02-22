@@ -209,39 +209,41 @@ const getAllStudents = async (req, res) => {
 const getStudentDetails = async (req, res) => {
     const { userId } = req.params; // Get userId from request parameters
     const role = req.user.role; // Check the role (optional)
-
+  
     try {
-        // Find the student by userId
-        const student = await User.findById(userId);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+      // Fetch student and batch data concurrently using Promise.all
+      const [student, batch] = await Promise.all([
+        User.findById(userId).select('name email status enrolledCourses'), // Only fetch necessary fields
+        Batch.findOne({ students: userId }).select('batchName course startDate endDate timings trainer') // Fetch related batch details
+      ]);
+  
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
+  
+      if (!batch) {
+        return res.status(404).json({ message: 'Batch not found' });
+      }
+  
+      // Combine student and batch data and send the response
+      res.status(200).json({
+        message: 'Student details retrieved successfully',
+        student: {
+          ...student.toObject(), // Convert the student document to a plain object
+          batchId: batch._id, // Include the batchId
+          batchName: batch.batchName, // Include batch name
+          course: batch.course, // Course ID related to the batch
+          startDate: batch.startDate, // Start date of the batch
+          endDate: batch.endDate, // End date of the batch
+          timings: batch.timings, // Timings of the batch
+          trainer: batch.trainer, // Trainer teaching the batch
         }
-
-        // Fetch the batch the student belongs to by searching for the student in the students array
-        const batch = await Batch.findOne({ students: userId }).select('batchName course startDate endDate timings trainer');
-        
-        if (!batch) {
-            return res.status(404).json({ message: 'Batch not found' });
-        }
-
-        // Send the student details along with the batchId and other batch details as a response
-        res.status(200).json({
-            message: 'Student details retrieved successfully',
-            student: {
-                ...student.toObject(), // Convert the student document to a plain object
-                batchId: batch._id, // Include the batchId
-                batchName: batch.batchName, // Include batch name
-                course: batch.course, // Course ID related to the batch
-                startDate: batch.startDate, // Start date of the batch
-                endDate: batch.endDate, // End date of the batch
-                timings: batch.timings, // Timings of the batch
-                trainer: batch.trainer, // Trainer teaching the batch
-            }
-        });
+      });
     } catch (error) {
-        console.error('Error fetching student details:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+      console.error('Error fetching student details:', error);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-};
+  };
+  
 
 module.exports = { approveStudent ,getPendingStudents,getAllStudents,getStudentDetails, approveAllPendingStudents,updateProfile};
