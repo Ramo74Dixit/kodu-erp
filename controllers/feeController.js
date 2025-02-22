@@ -38,73 +38,26 @@ const setStudentFee = async (req, res) => {
 // Create Razorpay order for payment
 const createPaymentOrder = async (req, res) => {
     try {
-        const { amount, currency, studentId } = req.body;
-
-        // Ensure that studentId, amount, and currency are present in the request body
-        if (!studentId || !amount || !currency) {
-            return res.status(400).json({ message: 'Student ID, amount, and currency are required' });
-        }
-
-        // Validate the amount to be a positive number
-        if (amount <= 0) {
-            return res.status(400).json({ message: 'Amount must be greater than 0' });
-        }
-
-        // Generate a shorter receipt ID (e.g., studentId + timestamp)
-        const receipt = `fee_${studentId.slice(0, 20)}_${Date.now()}`; // Keep it under 40 characters
-        if (receipt.length > 40) {
-            return res.status(400).json({ message: 'Receipt ID exceeds the 40 character limit' });
-        }
+        const { amount, currency } = req.body;
 
         const options = {
             amount: amount * 100,  // Razorpay expects amount in paise
             currency: currency,
-            receipt: receipt,  // Shortened receipt ID
-            notes: {
-                studentId: studentId // Adding the student ID to the order notes
-            }
+            receipt: crypto.randomBytes(10).toString('hex')
         };
 
-        // Create the Razorpay order
         razorpay.orders.create(options, (err, order) => {
             if (err) {
                 console.error("Error creating Razorpay order:", err);
                 return res.status(500).json({ message: 'Internal server error' });
             }
-
-            // Log the successful order creation for debugging purposes
-            console.log('Razorpay order created successfully:', order);
-
-            // Check if the order ID and URLs are valid
-            if (!order.id) {
-                return res.status(500).json({ message: 'Failed to create order. No order ID returned.' });
-            }
-
-            const paymentLink = `https://pay.razorpay.com/${order.id}`;
-            const qrCodeUrl = `https://qrpay.razorpay.com/${order.id}`;
-
-            // Log the URLs for debugging
-            console.log('Payment Link:', paymentLink);
-            console.log('QR Code URL:', qrCodeUrl);
-
-            // Return the order details (including the payment link and QR code URL)
-            res.status(200).json({
-                orderId: order.id,
-                short_url: paymentLink,  // Razorpay payment link
-                qr_code_url: qrCodeUrl,  // Razorpay QR code URL
-                studentId: studentId,
-                amount: amount,
-                currency: currency
-            });
+            res.status(200).json(order);
         });
     } catch (error) {
         console.error('Error creating Razorpay order:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
-
-
-
 
 // Handle payment success and fee deduction
 const handlePaymentSuccess = async (req, res) => {
