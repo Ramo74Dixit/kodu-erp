@@ -185,8 +185,8 @@ const updateProfile = async (req, res) => {
           updatedProfile: student
       });
   } catch (error) {
-      console.error("Error updating profile:", error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error updating profile:', error);
+    setError('There was an error updating your profile: ' + error.message);
   }
 };
 
