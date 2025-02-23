@@ -23,7 +23,7 @@ connectDB();
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests from localhost (development) and onrender (production)
-    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' || !origin) {
+    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' ||origin === 'https://koduerpfrontend.onrender.com' || !origin) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'), false);
