@@ -5,11 +5,11 @@ const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const authRoutes = require('./routes/authRoutes');
-const courseRoutes= require('./routes/courseRoutes')
-const batchRoutes = require('./routes/batchRoutes')
-const attendanceRoutes= require('./routes/attendanceRoutes')
-const feeRoutes= require('./routes/feeRoutes')
-const complaintRoutes= require('./routes/complaintRoutes')
+const courseRoutes = require('./routes/courseRoutes');
+const batchRoutes = require('./routes/batchRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const feeRoutes = require('./routes/feeRoutes');
+const complaintRoutes = require('./routes/complaintRoutes');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -19,18 +19,21 @@ const app = express();
 // Connect to DB
 connectDB();
 
-// Middleware
+// CORS Middleware
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests from localhost (development) and onrender (production)
-    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' ||origin === 'https://koduerpfrontend.onrender.com' || !origin) {
-      callback(null, true);
+    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' || origin === 'https://koduerpfrontend.onrender.com' || !origin) {
+      callback(null, true);  // Allow the request
     } else {
-      callback(new Error('Not allowed by CORS'), false);
+      callback(new Error('Not allowed by CORS'), false);  // Reject the request
     }
   },
+  methods: 'GET,POST,PUT,DELETE',  // Allow necessary HTTP methods
+  allowedHeaders: 'Content-Type, Authorization',  // Allow required headers
 }));
 
+// Middleware to parse JSON body
 app.use(express.json());
 
 // Routes
@@ -44,6 +47,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/complaints', complaintRoutes);
 
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
