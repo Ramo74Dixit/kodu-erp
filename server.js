@@ -20,18 +20,20 @@ const app = express();
 connectDB();
 
 // CORS Middleware
+// Log the origin in the CORS middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests from localhost (development) and onrender (production)
+    console.log("Origin:", origin);  // Log the origin to see which domains are trying to connect
     if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' || origin === 'https://koduerpfrontend.onrender.com' || !origin) {
-      callback(null, true);  // Allow the request
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'), false);  // Reject the request
+      callback(new Error('Not allowed by CORS'), false);
     }
   },
-  methods: 'GET,POST,PUT,DELETE',  // Allow necessary HTTP methods
-  allowedHeaders: 'Content-Type, Authorization',  // Allow required headers
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: 'Content-Type, Authorization',
 }));
+
 
 // Middleware to parse JSON body
 app.use(express.json());

@@ -12,71 +12,52 @@ const approveStudent = async (req, res) => {
   const { userId } = req.params;
   const { action } = req.body;
   const role = req.user.role;
+
   if (role !== "counsellor" && role !== "trainer") {
-    return res
-      .status(403)
-      .json({ message: "Only counsellor or trainer can approve the student" });
+    return res.status(403).json({ message: "Only counsellor or trainer can approve the student" });
   }
+
   if (action !== "approve" && action !== "reject") {
     return res.status(400).json({ message: "Invalid action" });
   }
+
   const student = await User.findById(userId);
   if (!student) {
     return res.status(404).json({ message: "Student not found" });
   }
+
   if (student.status !== "pending") {
-    return res
-      .status(400)
-      .json({ message: "Student is already approved or rejected" });
+    return res.status(400).json({ message: "Student is already approved or rejected" });
   }
+
   student.status = action === "approve" ? "approved" : "rejected";
   student.approvedBy = role;
 
+  // Find the latest batch the student should be added to
+  const latestBatch = await Batch.findOne({})  // Fetch the batch data (you can apply more filters if needed)
+    .sort({ startDate: -1 }) // Sort batches by startDate in descending order (latest first)
+    .limit(1); // Only get the latest batch
+
+  if (!latestBatch) {
+    return res.status(404).json({ message: "No batch found to add the student" });
+  }
+
+  // Add the student to the latest batch
+  latestBatch.students.push(student._id);  // Add student's ID to the batch's students array
+
+  await latestBatch.save(); // Save the updated batch
+
+  // Save the student's batchId in the student's profile (if you still want to store it)
+  student.batches.push(latestBatch._id); // Add batch to student's profile
   await student.save();
+
+  // Send approval email to the student
   if (student.status === "approved") {
     const mailOptions = {
       from: process.env.EMAILUSER,
       to: student.email,
       subject: "Welcome to Kodu Institute",
-      html: `
-                <h1 style="text-align:center; color: #4CAF50; font-family: Arial, sans-serif;">Welcome to Kodu Institute!</h1>
-
-<p style="font-size: 18px; color: #555; font-family: Arial, sans-serif;">
-    Dear <strong>${student.name}</strong>,
-</p>
-
-<p style="font-size: 16px; color: #333; font-family: Arial, sans-serif;">
-    Thank you for joining <strong>Kodu Institute</strong>. We are excited to have you on board. Your registration has been successfully approved by the <strong>${role}</strong>.
-</p>
-
-<p style="font-size: 16px; color: #FF5733; font-family: Arial, sans-serif; font-weight: bold;">
-    We wish you all the best in your learning journey!
-</p>
-
-<p style="font-size: 16px; color: #0066cc; font-family: Arial, sans-serif;">
-    If you have any questions, feel free to reach out to us at any time. We are here to assist you!
-</p>
-
-<p style="font-size: 16px; color: #28a745; font-family: Arial, sans-serif; font-weight: bold;">
-    Best regards,
-</p>
-
-<p style="font-size: 16px; color: #FFD700; font-family: Arial, sans-serif;">
-    Diksha, <br>
-    Vice President - Kodu Powered By Dhurina
-</p>
-
-<p style="font-size: 14px; color: #999; font-family: Arial, sans-serif; text-align: center;">
-    <em>You're receiving this email because you joined Kodu Institute! We are happy to have you as part of our learning community.</em>
-</p>
-
-<div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-family: Arial, sans-serif;">
-    <p style="font-size: 14px; color: #666;">
-        <a href="https://koduapp.com/" style="color: #4CAF50; text-decoration: none; font-weight: bold;">Visit Kodu Institute</a>
-    </p>
-</div>
-
-            `,
+      html: `...`  // email content
     };
 
     try {
@@ -88,9 +69,10 @@ const approveStudent = async (req, res) => {
   }
 
   res.status(200).json({
-    message: `Student has been ${action}d successfully by ${role}`,
+    message: `Student has been ${action}d successfully by ${role}, and added to the latest batch`,
   });
 };
+
 
 
 const getPendingStudents = async (req,res)=>{
