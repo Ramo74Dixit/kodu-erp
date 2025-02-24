@@ -40,8 +40,14 @@ const createPaymentOrder = async (req, res) => {
     try {
         const { amount, currency } = req.body;
 
+        // Ensure the amount is an integer
+        const parsedAmount = Math.round(amount * 100);  // Razorpay expects amount in paise
+        if (isNaN(parsedAmount)) {
+            return res.status(400).json({ message: 'Invalid amount' });
+        }
+
         const options = {
-            amount: amount * 100,  // Razorpay expects amount in paise
+            amount: parsedAmount,  // Amount in paise
             currency: currency,
             receipt: crypto.randomBytes(10).toString('hex')
         };
@@ -51,7 +57,9 @@ const createPaymentOrder = async (req, res) => {
                 console.error("Error creating Razorpay order:", err);
                 return res.status(500).json({ message: 'Internal server error' });
             }
-            res.status(200).json(order);
+
+            console.log('Razorpay Order Created:', order); // Log the order for debugging
+            res.status(200).json(order); // Send the order object back to the frontend
         });
     } catch (error) {
         console.error('Error creating Razorpay order:', error);
@@ -65,12 +73,18 @@ const handlePaymentSuccess = async (req, res) => {
 
     try {
         // Check if the user making the request is a counselor or student
-        console.log('req.user:', req.user); 
         const role = req.user.role;
-        
+
         // Ensure that only students or counselors can submit fees
         if (role !== 'student' && role !== 'counsellor') {
             return res.status(403).json({ message: 'Only student or counselor can submit fees' });
+        }
+
+        // Fetch payment details from Razorpay for verification
+        const payment = await razorpay.payments.fetch(paymentId);
+
+        if (!payment || payment.status !== 'captured') {
+            return res.status(400).json({ message: 'Payment failed or not captured' });
         }
 
         // Find the student fee record
@@ -78,14 +92,6 @@ const handlePaymentSuccess = async (req, res) => {
 
         if (!studentFee) {
             return res.status(404).json({ message: 'Student fee record not found' });
-        }
-
-        // If the role is a counselor, make sure they can submit the payment for the student
-        if (role === 'counsellor') {
-            // No need to check studentFee again here, as we've already fetched it earlier
-            if (!studentFee) {
-                return res.status(400).json({ message: 'Cannot submit payment for this student' });
-            }
         }
 
         // Deduct the paid fee from the remaining fee
@@ -101,18 +107,8 @@ const handlePaymentSuccess = async (req, res) => {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        // Define the receipts folder path
-        const receiptsFolder = path.join(__dirname, 'receipts'); // Make sure this is the correct path to your receipts folder
-
-        // Ensure the receipts folder exists
-        if (!fs.existsSync(receiptsFolder)) {
-            fs.mkdirSync(receiptsFolder); // Create the folder if it doesn't exist
-        }
-
-        // Define the receipt file path
+        // Generate the receipt
         const filePath = path.join(receiptsFolder, `payment_test_${paymentId}_receipt.pdf`);
-
-        // Generate the receipt and save it to the specified path
         const receipt = generateReceipt(student.name, totalFee, paymentId, filePath);
         console.log(`Receipt generated at: ${filePath}`);
 
@@ -126,6 +122,7 @@ const handlePaymentSuccess = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 
