@@ -23,12 +23,18 @@ const uploadAssignment = async (req, res) => {
       folder: 'assignments',
     });
 
+    // Agar raw type hai, to URL mein fl_attachment=false append karein
+    let fileUrl = cloudinaryRes.secure_url;
+    if (resourceType === 'raw') {
+      fileUrl += '?fl_attachment=false';
+    }
+
     // Use user role from the authentication system
     const role = req.user.role; // Assuming 'role' is set in the user object after authentication
 
     const assignment = new Assignment({
       title,
-      fileUrl: cloudinaryRes.secure_url,
+      fileUrl, // Use modified URL
       batchId,
       createdBy: req.user.id,  // Save the user who uploaded the file
       type: role  // Automatically set type based on the user's role
@@ -119,12 +125,17 @@ const uploadStudentAssignment = async (req, res) => {
           folder: 'assignments',
       });
 
+      let fileUrl = cloudinaryRes.secure_url;
+      if (resourceType === 'raw') {
+        fileUrl += '?fl_attachment=false';
+      }
+
       const assignment = new Assignment({
           title,
-          fileUrl: cloudinaryRes.secure_url,
+          fileUrl, // Use modified URL here as well
           batchId,
-          student: req.user.id ,
-          type: req.user.role // Use the authenticated user's ID
+          student: req.user.id,
+          type: req.user.role // Use the authenticated user's role
       });
 
       await assignment.save();
