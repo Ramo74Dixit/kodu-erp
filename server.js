@@ -10,6 +10,7 @@ const batchRoutes = require('./routes/batchRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const complaintRoutes = require('./routes/complaintRoutes');
+const assignmentRoutes = require('./routes/assignmentRoutes');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -48,7 +49,7 @@ app.use('/api/batches', batchRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/complaints', complaintRoutes);
-
+app.use('/api/assignments', assignmentRoutes);
 // Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

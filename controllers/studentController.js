@@ -254,6 +254,36 @@ const getStudentDetails = async (req, res) => {
   }
 };
 
+const deleteStudentFromBatch = async (req, res) => {
+  const { batchId, studentId } = req.params;
+  const role = req.user.role;
+
+  if (role !== "counsellor" && role !== "admin" && role !== "trainer") {
+    return res.status(403).json({ message: "Only counsellor or admin can remove students from batches" });
+  }
+
+  try {
+    const batch = await Batch.findById(batchId);
+    if (!batch) {
+      return res.status(404).json({ message: "Batch not found" });
+    }
+
+    const studentIndex = batch.students.indexOf(studentId);
+    if (studentIndex === -1) {
+      return res.status(404).json({ message: "Student not found in this batch" });
+    }
+
+    batch.students.splice(studentIndex, 1);
+    await batch.save();
+
+    await User.findByIdAndUpdate(studentId, { $pull: { batches: batchId } });
+
+    res.status(200).json({ message: "Student removed from batch successfully" });
+  } catch (error) {
+    console.error("Error removing student from batch:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
-module.exports = { approveStudent ,getPendingStudents,getAllStudents,getStudentDetails, approveAllPendingStudents,updateProfile};
+module.exports = { approveStudent ,getPendingStudents,getAllStudents,getStudentDetails, approveAllPendingStudents,updateProfile,deleteStudentFromBatch};
