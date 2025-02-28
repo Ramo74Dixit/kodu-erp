@@ -81,7 +81,11 @@ const scoreAssignment = async (req, res) => {
 
 const viewStudentAssignments = async (req, res) => {
   const { batchId } = req.params;
-  const { title } = req.body;  
+  const { title } = req.query;  // <-- Use req.query instead of req.body
+
+  console.log('[viewStudentAssignments] START');
+  console.log('[viewStudentAssignments] batchId (req.params):', batchId);
+  console.log('[viewStudentAssignments] title (req.query):', title);
 
   try {
     let query = { batchId, type: 'student' };
@@ -89,18 +93,25 @@ const viewStudentAssignments = async (req, res) => {
       query.title = title;
     }
 
+    console.log('[viewStudentAssignments] MongoDB Query:', query);
+
     const assignments = await Assignment.find(query);
+    console.log('[viewStudentAssignments] Assignments returned:', assignments);
+    console.log('[viewStudentAssignments] Number of assignments:', assignments.length);
 
     if (assignments.length === 0) {
+      console.log('[viewStudentAssignments] No student assignments found for the given query.');
       return res.status(404).json({ message: 'No student assignments found' });
     }
 
     res.status(200).json(assignments);
+    console.log('[viewStudentAssignments] SUCCESS - Assignments sent in response.');
   } catch (error) {
-    console.error('Error fetching student assignments:', error);
+    console.error('[viewStudentAssignments] ERROR:', error);
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
 
 
 const uploadStudentAssignment = async (req, res) => {
