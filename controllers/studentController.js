@@ -143,34 +143,36 @@ const updateProfile = async (req, res) => {
   const { phoneNumber, whatsappNumber, parentPhoneNumber, enrolledCourses, education } = req.body;
   
   try {  
-      const student = await User.findById(userId);
-      if (!student) {
-          return res.status(404).json({ message: 'Student not found' });
-      }
-      if (student.status !== 'approved') {
-          return res.status(403).json({ message: 'You can only update your profile after your registration is approved' });
-      }
+    const student = await User.findById(userId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    if (student.status !== 'approved') {
+      return res.status(403).json({ message: 'You can only update your profile after your registration is approved' });
+    }
 
-      const updatedProfile = {
-          phoneNumber: phoneNumber || student.phoneNumber,
-          whatsappNumber: whatsappNumber || student.whatsappNumber,
-          parentPhoneNumber: parentPhoneNumber || student.parentPhoneNumber,
-          enrolledCourses: enrolledCourses || student.enrolledCourses,
-          education: education || student.education
-      };
+    const updatedProfile = {
+      phoneNumber: phoneNumber || student.phoneNumber,
+      whatsappNumber: whatsappNumber || student.whatsappNumber,
+      parentPhoneNumber: parentPhoneNumber || student.parentPhoneNumber,
+      enrolledCourses: enrolledCourses || student.enrolledCourses,
+      education: education || student.education
+    };
 
-      student.set(updatedProfile);
-      await student.save();
+    student.set(updatedProfile);
+    await student.save();
 
-      res.status(200).json({
-          message: 'Profile updated successfully',
-          updatedProfile: student
-      });
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      updatedProfile: student
+    });
   } catch (error) {
     console.error('Error updating profile:', error);
-    setError('There was an error updating your profile: ' + error.message);
+    return res.status(500).json({ message: 'There was an error updating your profile: ' + error.message });
   }
 };
+
 
 
 const getAllStudents = async (req, res) => {
