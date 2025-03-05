@@ -24,7 +24,7 @@ connectDB();
 app.use(cors({
   origin: function (origin, callback) {
     console.log("Origin:", origin);  // Log the origin to see which domains are trying to connect
-    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' || origin === 'https://koduerpfrontend.onrender.com' || !origin) {
+    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' || origin === 'https://koduerpfrontend.onrender.com' || origin === 'https://kodu-erp-frontend.vercel.app' || !origin) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'), false);
