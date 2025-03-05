@@ -1,15 +1,12 @@
-// routes/complaintRoutes.js
 const express = require('express');
-const { submitComplaint, getComplaintsByCategory, getComplaintsByStudent, getAllComplaints } = require('../controllers/complaintController');
-const isAdmin = require('../middleware/authMiddleware');  // Admin auth middleware
 const router = express.Router();
+const { fileComplaint, getAllComplaints } = require('../controllers/complaintController');
+const authenticate = require('../middleware/authMiddleware'); // aapka authentication middleware
 
-// Route for students to submit complaints
-router.post('/submit', submitComplaint);
+// Route for student to file a complaint (trainerId ab required nahi)
+router.post('/file', authenticate, fileComplaint);
 
-// Admin routes to fetch complaints by category, by student, or all complaints
-router.get('/admin/complaints/category/:category', isAdmin, getComplaintsByCategory);  // For admin only
-router.get('/admin/complaints/student/:studentId', isAdmin, getComplaintsByStudent);  // For admin only
-router.get('/admin/complaints', isAdmin, getAllComplaints);  // For admin only
+// Route for admin to get all complaints
+router.get('/all', authenticate, getAllComplaints);
 
 module.exports = router;

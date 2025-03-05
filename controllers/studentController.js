@@ -72,9 +72,6 @@ const approveStudent = async (req, res) => {
     message: `Student has been ${action}d successfully by ${role}, and added to the latest batch`,
   });
 };
-
-
-
 const getPendingStudents = async (req,res)=>{
     const role = req.user.role;
     if(role !== "counsellor"){
@@ -172,8 +169,6 @@ const updateProfile = async (req, res) => {
     return res.status(500).json({ message: 'There was an error updating your profile: ' + error.message });
   }
 };
-
-
 
 const getAllStudents = async (req, res) => {
     const role = req.user.role;
@@ -287,5 +282,5 @@ const deleteStudentFromBatch = async (req, res) => {
   }
 };
 
-
+ 
 module.exports = { approveStudent ,getPendingStudents,getAllStudents,getStudentDetails, approveAllPendingStudents,updateProfile,deleteStudentFromBatch};

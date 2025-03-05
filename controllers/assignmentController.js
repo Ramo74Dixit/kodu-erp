@@ -2,9 +2,20 @@ const cloudinary = require('../config/cloudinary'); // Import Cloudinary
 const Assignment = require('../models/Assignment');
 const Batch = require('../models/Batch');
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
+
+// Create a transporter for sending emails.
+// It is recommended to use environment variables for credentials.
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user:"ramodixit577@gmail.com", // your email user in .env
+    pass:"insh jgrl dzlk rmcw",  // your email password in .env
+  },
+});
 
 const uploadAssignment = async (req, res) => {
-  const { batchId, title } = req.body;
+  const { batchId, title, deadline } = req.body; // added deadline field
   const file = req.file;
 
   if (!file) {
@@ -28,36 +39,62 @@ const uploadAssignment = async (req, res) => {
   // Decide resourceType properly
   let resourceType;
   if (file.mimetype === 'application/pdf') {
-    // For PDFs, explicitly use 'raw'
     resourceType = 'raw';
   } else if (['image/jpeg', 'image/png', 'image/gif'].includes(file.mimetype)) {
-    // For images, use 'image'
     resourceType = 'image';
   } else {
-    // Fallback for other text/markdown/js
     resourceType = 'auto';
   }
 
   try {
+    // Upload file to Cloudinary
     const cloudinaryRes = await cloudinary.uploader.upload(file.path, {
       resource_type: resourceType,
       folder: 'assignments',
       format: 'pdf',
     });
-    // console.log('Cloudinary Response:', cloudinaryRes);
+
+    // Create a new assignment with deadline field
     const assignment = new Assignment({
       title,
       fileUrl: cloudinaryRes.secure_url,
       batchId,
       createdBy: req.user.id,
-      type: req.user.role
+      type: req.user.role,
+      deadline // save the deadline provided by trainer
     });
 
     await assignment.save();
     await Batch.findByIdAndUpdate(batchId, { $push: { assignments: assignment._id } });
 
+    // Fetch the batch along with its associated students
+    const batch = await Batch.findById(batchId).populate("students");
+    if (batch && batch.students && batch.students.length > 0) {
+      // Iterate over each student and send a professional email
+      for (const student of batch.students) {
+        const mailOptions = {
+          from: process.env.EMAILUSER,
+          to: student.email,
+          subject: `New Assignment Notification: ${title}`,
+          html: `
+            <p>Dear ${student.name},</p>
+            <p>We hope you are doing well.</p>
+            <p>This is to inform you that a new assignment titled <strong>${title}</strong> has been uploaded by your trainer.</p>
+            <p><strong>Deadline:</strong> ${deadline}</p>
+            <p>You may access the assignment <a href="${cloudinaryRes.secure_url}">here</a>.</p>
+            <p>Please ensure that you complete and submit your assignment before the deadline. Should you have any questions, feel free to reach out to your trainer.</p>
+            <br>
+            <p>Best regards,</p>
+            <p>Your Trainer at [Institute Name]</p>
+          `
+        };
+        // Send the email
+        await transporter.sendMail(mailOptions);
+      }
+    }
+
     res.status(201).json({
-      message: 'Assignment uploaded successfully',
+      message: 'Assignment uploaded and notifications sent successfully',
       assignment,
     });
   } catch (error) {
@@ -65,6 +102,7 @@ const uploadAssignment = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
 
 
 // ------------------ Get All Assignments for a Batch (No Type Filter) ------------------

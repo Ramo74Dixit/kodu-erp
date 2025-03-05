@@ -12,7 +12,6 @@ const feeRoutes = require('./routes/feeRoutes');
 const complaintRoutes = require('./routes/complaintRoutes');
 const assignmentRoutes = require('./routes/assignmentRoutes');
 const dotenv = require('dotenv');
-
 dotenv.config();
 
 const app = express();
