@@ -110,7 +110,7 @@ const uploadAssignment = async (req, res) => {
                     display: inline-block;
                     padding: 10px 20px;
                     background-color: #007bff;
-                    color: #ffffff;
+                    color:white;
                     text-decoration: none;
                     border-radius: 5px;
                     margin-top: 20px;
@@ -145,7 +145,7 @@ const uploadAssignment = async (req, res) => {
                     </p>
                   </div>
                   <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} Your Company Name. All rights reserved.</p>
+                    <p>&copy; ${new Date().getFullYear()} Kodu-Powered By Dhurina . All rights reserved.</p>
                   </div>
                 </div>
               </body>
