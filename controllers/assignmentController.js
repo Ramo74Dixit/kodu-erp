@@ -77,15 +77,79 @@ const uploadAssignment = async (req, res) => {
           to: student.email,
           subject: `New Assignment Notification: ${title}`,
           html: `
-            <p>Dear ${student.name},</p>
-            <p>We hope you are doing well.</p>
-            <p>This is to inform you that a new assignment titled <strong>${title}</strong> has been uploaded by your trainer.</p>
-            <p><strong>Deadline:</strong> ${deadline}</p>
-            <p>You may access the assignment <a href="${cloudinaryRes.secure_url}">here</a>.</p>
-            <p>Please ensure that you complete and submit your assignment before the deadline. Should you have any questions, feel free to reach out to your trainer.</p>
-            <br>
-            <p>Best regards,</p>
-            <p>Your Trainer at [Institute Name]</p>
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="UTF-8">
+                <title>New Assignment Notification</title>
+                <style>
+                  body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    margin: 0;
+                    padding: 20px;
+                  }
+                  .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    padding: 30px;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                  }
+                  .header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                  }
+                  .content {
+                    line-height: 1.6;
+                    font-size: 16px;
+                    color: #333;
+                  }
+                  .button {
+                    display: inline-block;
+                    padding: 10px 20px;
+                    background-color: #007bff;
+                    color: #ffffff;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                  }
+                  .footer {
+                    margin-top: 30px;
+                    font-size: 12px;
+                    color: #777;
+                    text-align: center;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="content">
+                    <p>Dear ${student.name},</p>
+                    <p>We hope you are doing well.</p>
+                    <p>This is to inform you that a new assignment titled <strong>${title}</strong> has been uploaded by your trainer.</p>
+                    <p><strong>Deadline:</strong> ${deadline}</p>
+                    <p>You may access the assignment by clicking the button below:</p>
+                    <p>
+                      <a class="button" href="${cloudinaryRes.secure_url}" target="_blank">
+                        View Assignment
+                      </a>
+                    </p>
+                    <p>Please ensure that you complete and submit your assignment before the deadline. If you have any questions, feel free to reach out to your trainer.</p>
+                    <br>
+                    <p>Best regards,</p>
+                    <p>
+                      <strong>Ram Mohan Dixit</strong><br>
+                      MERN STACK TRAINER
+                    </p>
+                  </div>
+                  <div class="footer">
+                    <p>&copy; ${new Date().getFullYear()} Your Company Name. All rights reserved.</p>
+                  </div>
+                </div>
+              </body>
+            </html>
           `
         };
         // Send the email
@@ -102,6 +166,7 @@ const uploadAssignment = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
 
 
 
