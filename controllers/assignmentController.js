@@ -204,28 +204,40 @@ const scoreAssignment = async (req, res) => {
 
 // ------------------ View Assignments (Used by Student, Now Shows Trainer + Student) ------------------
 const viewStudentAssignments = async (req, res) => {
-  const { batchIds } = req.body; // Pass an array of batch IDs
-  const { title } = req.query;
+  const { batchId } = req.params;
+  const { title } = req.query; // from query param
 
   try {
-    let query = { batchId: { $in: batchIds } };
+    // Convert batchId to ObjectId
+    const objectIdBatchId = new mongoose.Types.ObjectId(batchId);
 
+    // NOTE: Removed "type: 'student'" so we can see both student + trainer assignments
+    let query = { batchId: objectIdBatchId };
+
+    // Optional title filter (case-insensitive)
     if (title) {
       query.title = new RegExp(`^${title}$`, 'i');
     }
 
+    // console.log('[viewStudentAssignments] MongoDB Query:', query);
+
     const assignments = await Assignment.find(query);
+
+    // console.log('[viewStudentAssignments] Assignments returned:', assignments);
+    // console.log('[viewStudentAssignments] Number of assignments:', assignments.length);
+
     if (assignments.length === 0) {
+      console.log('[viewStudentAssignments] No assignments found for the given query.');
       return res.status(404).json({ message: 'No assignments found' });
     }
 
     res.status(200).json(assignments);
+    console.log('[viewStudentAssignments] SUCCESS - Assignments sent in response.');
   } catch (error) {
-    console.error('Error fetching assignments:', error);
+    console.error('[viewStudentAssignments] ERROR:', error);
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
-
 
 // ------------------ Upload Assignment (Student) ------------------
 const uploadStudentAssignment = async (req, res) => {
