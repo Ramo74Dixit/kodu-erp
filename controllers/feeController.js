@@ -69,50 +69,46 @@ const createPaymentOrder = async (req, res) => {
 
 // Handle payment success and fee deduction
 const handlePaymentSuccess = async (req, res) => {
-    const { paymentId, studentId, totalFee } = req.body;
+    const { paymentId, orderId, studentId, totalFee, razorpay_signature } = req.body;
 
     try {
-        // Check if the user making the request is a counselor or student
         const role = req.user.role;
-
-        // Ensure that only students or counselors can submit fees
         if (role !== 'student' && role !== 'counsellor') {
             return res.status(403).json({ message: 'Only student or counselor can submit fees' });
         }
 
-        // Fetch payment details from Razorpay for verification
+        // Fetch the payment details from Razorpay
         const payment = await razorpay.payments.fetch(paymentId);
 
         if (!payment || payment.status !== 'captured') {
             return res.status(400).json({ message: 'Payment failed or not captured' });
         }
 
+        // Verify the payment signature
+        const generatedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(orderId + "|" + paymentId)
+            .digest('hex');
+
+        if (generatedSignature !== razorpay_signature) {
+            return res.status(400).json({ message: 'Payment verification failed: Invalid signature' });
+        }
+
         // Find the student fee record
         const studentFee = await StudentFee.findOne({ student: studentId });
-
         if (!studentFee) {
             return res.status(404).json({ message: 'Student fee record not found' });
         }
 
-        // Deduct the paid fee from the remaining fee
-        studentFee.paidFee += totalFee;
+        // Update fees record
+        studentFee.paidFee = (studentFee.paidFee || 0) + totalFee;
         studentFee.remainingFee -= totalFee;
-
-        // Save the updated student fee record
         await studentFee.save();
 
-        // Fetch student details
-        const student = await User.findById(studentId);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
-        }
-
         // Generate the receipt
-        const filePath = path.join(receiptsFolder, `payment_test_${paymentId}_receipt.pdf`);
-        const receipt = generateReceipt(student.name, totalFee, paymentId, filePath);
-        console.log(`Receipt generated at: ${filePath}`);
+        const filePath = path.join(receiptsFolder, `payment_${paymentId}_receipt.pdf`);
+        generateReceipt(studentFee.student, totalFee, paymentId, filePath);
 
-        res.status(200).json({
+        res.status(200).json({ 
             message: 'Payment successful and fee updated',
             receipt: filePath
         });
@@ -122,6 +118,7 @@ const handlePaymentSuccess = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 
