@@ -240,9 +240,10 @@ const viewStudentAssignments = async (req, res) => {
 };
 
 // ------------------ Upload Assignment (Student) ------------------
+// Controller: uploadStudentAssignment.js
 const uploadStudentAssignment = async (req, res) => {
-  const { assignmentId, submissionLink } = req.body;  // Get the assignmentId and submission link from the request body
-  const batchId = req.params.batchId;  // Get batchId from params
+  const { assignmentId, submissionLink } = req.body; // Get assignmentId and submission link from the body
+  const batchId = req.params.batchId; // Get batchId from params
 
   // Validate the submissionLink format (it should be a GitHub or PDF link)
   const isValidLink = /^(https?:\/\/)?(github\.com\/.+|.+\.pdf)$/.test(submissionLink);
@@ -263,16 +264,25 @@ const uploadStudentAssignment = async (req, res) => {
       return res.status(404).json({ message: 'Assignment not found.' });
     }
 
-    // Update the existing assignment with the student's submission link and status
-    assignment.submissions = assignment.submissions || []; // Initialize submissions array if it doesn't exist
+    // Ensure no duplicate submission from the same student for the same assignment
+    const existingSubmission = assignment.submissions.find(
+      submission => submission.student.toString() === req.user.id.toString()
+    );
+    if (existingSubmission) {
+      return res.status(400).json({ message: 'You have already submitted this assignment.' });
+    }
+
+    // Add this student's submission to the submissions array.
+    // We reference the assignment's own _id instead of a separate assignmentId.
     assignment.submissions.push({
-      student: req.user.id,  // This is the student submitting the assignment
-      submissionLink,        // The link the student is submitting
-      status: 'submitted',   // Set the status to 'submitted' for this student's submission
-      submittedAt: new Date()  // Save the submission time
+      student: req.user.id,           // The student submitting the assignment
+      assignmentId: assignment._id,     // Reference the current assignment's _id
+      submissionLink,                 // The link the student is submitting
+      status: 'submitted',            // Set the status to 'submitted'
+      submittedAt: new Date()         // Save the submission time
     });
 
-    // Save the updated assignment
+    // Save the updated assignment document
     await assignment.save();
 
     // Return a success response
@@ -286,6 +296,11 @@ const uploadStudentAssignment = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
+// module.exports = uploadStudentAssignment;
+
+
+
 
 
 

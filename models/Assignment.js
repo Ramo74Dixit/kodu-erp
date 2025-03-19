@@ -1,3 +1,4 @@
+// Model: Assignment.js
 const mongoose = require('mongoose');
 
 const assignmentSchema = new mongoose.Schema({
@@ -7,13 +8,13 @@ const assignmentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   type: { type: String, required: true, enum: ['student', 'trainer'] },
   status: { type: String, default: 'pending' },
-  assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Assignment', required: true },
-  student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to User model (students are users)
+  // Removed top-level assignmentId and student fields from the assignment document.
   submissions: [{ 
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },  // The student who submitted
-    submissionLink: { type: String, required: true },  // The link submitted by the student
+    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Student who submitted
+    submissionLink: { type: String, required: true },                                 // Submitted link
+    assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Assignment', required: true }, // Reference to the assignment
     status: { type: String, enum: ['submitted', 'pending'], default: 'submitted' },
-    submittedAt: { type: Date, default: Date.now },  // Timestamp of the submission
+    submittedAt: { type: Date, default: Date.now }  // Timestamp of submission
   }],
 });
 
