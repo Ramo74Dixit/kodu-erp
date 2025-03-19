@@ -333,26 +333,32 @@ const getSubmissionsForAssignment = async (req, res) => {
   const { assignmentId } = req.params;
 
   try {
-    // Fetch all student submissions with the assignmentId and populate the 'student' field
-    const submissions = await Assignment.find({
-      assignmentId: new mongoose.Types.ObjectId(assignmentId), // Ensure ObjectId format
-      type: 'student'  // Only student submissions
-    })
-    .populate('student', 'name email') // Populate student details (name and email)
-    .select('title fileUrl student status');  // Select relevant fields like title, student, status
+    // Find the assignment by its _id
+    const assignment = await Assignment.findById(assignmentId)
+      // Populate the 'student' field inside each submission (to get name, email)
+      .populate('submissions.student', 'name email')
+      // Select only what you want to return
+      .select('title fileUrl submissions');
 
-    // If no submissions, return message
-    if (submissions.length === 0) {
+    // If no assignment found, send 404
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found.' });
+    }
+
+    // If the assignment is found but has no submissions
+    if (!assignment.submissions || assignment.submissions.length === 0) {
       return res.status(404).json({ message: 'No submissions found for this assignment.' });
     }
 
-    // Return the submissions along with student data
-    res.status(200).json(submissions);
+    // Return just the submissions (or return the entire assignment if you prefer)
+    return res.status(200).json(assignment.submissions);
   } catch (error) {
     console.error('Error fetching submissions:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    return res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
+
 
 // ------------------ Export All ------------------
 module.exports = {
