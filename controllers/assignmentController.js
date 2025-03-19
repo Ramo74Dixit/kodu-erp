@@ -241,10 +241,8 @@ const viewStudentAssignments = async (req, res) => {
 
 // ------------------ Upload Assignment (Student) ------------------
 const uploadStudentAssignment = async (req, res) => {
-  const { assignmentId, submissionLink } = req.body;  // Removed title from request body
+  const { assignmentId, submissionLink } = req.body;
   const batchId = req.params.batchId;
-
-  console.log("Received batchId:", batchId); // Debugging line to log the batchId
 
   // Validate submissionLink for GitHub or PDF URL
   const isValidLink = /^(https?:\/\/)?(github\.com\/.+|.+\.pdf)$/.test(submissionLink);
@@ -255,27 +253,26 @@ const uploadStudentAssignment = async (req, res) => {
   try {
     // Ensure batchId is treated as ObjectId correctly
     const batch = await Batch.findById(new mongoose.Types.ObjectId(batchId));
-    console.log("Batch found:", batch); // Debugging line to check batch
 
     if (!batch) {
       return res.status(404).json({ message: 'Batch not found.' });
     }
 
     // Ensure the assignmentId exists in the batch's assignments before submission
-    const assignment = await Assignment.findById(assignmentId); // Find the specific assignment by ID
+    const assignment = await Assignment.findById(assignmentId);
     if (!assignment) {
       return res.status(404).json({ message: 'Assignment not found.' });
     }
 
-    // Proceed with assignment submission, use the fetched title
+    // Proceed with assignment submission
     const studentAssignment = new Assignment({
       assignmentId,  // Store assignmentId directly
       title: assignment.title,  // Fetch the title directly from the assignment
       fileUrl: submissionLink,
       batchId,
-      student: req.user.id,
+      student: req.user.id,  // student id should be the authenticated user
       type: 'student',  // Ensure type is 'student' for student submissions
-      status: 'submitted'
+      status: 'submitted'  // Set the status to submitted for this specific student
     });
 
     await studentAssignment.save();
@@ -288,6 +285,7 @@ const uploadStudentAssignment = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
 
 
 
