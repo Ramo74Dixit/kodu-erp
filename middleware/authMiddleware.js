@@ -12,11 +12,16 @@ const authMiddleware = (req, res, next) => {
         // Decode the token and log the decoded token for debugging
         const decoded = jwt.verify(token, JWT_SECRET);  
 
-        // Log decoded token to check if userId is included
-        // console.log("Decoded JWT Token:", decoded);  // Check if 'userId' is in the token
+        // Ensure that the decoded token has the expected fields (e.g., userId and role)
+        if (!decoded || !decoded.userId || !decoded.role) {
+            return res.status(401).json({ message: "Invalid token structure" });
+        }
 
-        // Attach the decoded user info (including _id and role) to the request object
-        req.user = decoded;  
+        // Attach the decoded user info (including _id, role) to the request object
+        req.user = {
+            id: decoded.userId,   // Assuming 'userId' is in the decoded JWT
+            role: decoded.role,   // Assuming 'role' is in the decoded JWT
+        };
 
         // Log req.user to ensure the user details are being passed
         // console.log("req.user in Middleware:", req.user);  // This should contain userId and role

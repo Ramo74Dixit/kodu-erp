@@ -241,52 +241,55 @@ const viewStudentAssignments = async (req, res) => {
 
 // ------------------ Upload Assignment (Student) ------------------
 const uploadStudentAssignment = async (req, res) => {
-  const { batchId } = req.params;
-  const { title } = req.body;
+  const { assignmentId, submissionLink } = req.body;  // Removed title from request body
+  const batchId = req.params.batchId;
 
-  const file = req.file;
-  if (!file) {
-    return res.status(400).json({ message: 'No file uploaded' });
+  console.log("Received batchId:", batchId); // Debugging line to log the batchId
+
+  // Validate submissionLink for GitHub or PDF URL
+  const isValidLink = /^(https?:\/\/)?(github\.com\/.+|.+\.pdf)$/.test(submissionLink);
+  if (!isValidLink) {
+    return res.status(400).json({ message: 'Invalid link. Please submit a GitHub repository or a PDF file URL.' });
   }
-
-  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'text/markdown'];
-  if (!allowedTypes.includes(file.mimetype)) {
-    return res.status(400).json({ message: 'File type not supported' });
-  }
-
-  const resourceType = ['image/jpeg', 'image/png'].includes(file.mimetype)
-    ? 'image'
-    : 'auto';
 
   try {
-    const cloudinaryRes = await cloudinary.uploader.upload(file.path, {
-      resource_type: resourceType,
-      folder: 'assignments',
-    });
+    // Ensure batchId is treated as ObjectId correctly
+    const batch = await Batch.findById(new mongoose.Types.ObjectId(batchId));
+    console.log("Batch found:", batch); // Debugging line to check batch
 
-    let fileUrl = cloudinaryRes.secure_url;
+    if (!batch) {
+      return res.status(404).json({ message: 'Batch not found.' });
+    }
 
-    // The student's role is typically 'student', but we won't filter by it in retrieval
-    const assignment = new Assignment({
-      title,
-      fileUrl,
+    // Ensure the assignmentId exists in the batch's assignments before submission
+    const assignment = await Assignment.findById(assignmentId); // Find the specific assignment by ID
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found.' });
+    }
+
+    // Proceed with assignment submission, use the fetched title
+    const studentAssignment = new Assignment({
+      assignmentId,  // Store assignmentId directly
+      title: assignment.title,  // Fetch the title directly from the assignment
+      fileUrl: submissionLink,
       batchId,
-      student: req.user.id, // If you have a separate field for the student
-      type: req.user.role   // e.g. 'student'
+      student: req.user.id,
+      type: 'student',  // Ensure type is 'student' for student submissions
+      status: 'submitted'
     });
 
-    await assignment.save();
-    await Batch.findByIdAndUpdate(batchId, { $push: { assignments: assignment._id } });
-
+    await studentAssignment.save();
     res.status(201).json({
-      message: 'Assignment uploaded successfully',
-      assignment,
+      message: 'Assignment submitted successfully',
+      studentAssignment,
     });
   } catch (error) {
-    console.error('Error uploading assignment:', error);
+    console.error('Error submitting assignment:', error);
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
+
 
 // ------------------ Get Unique Assignment Titles for a Batch ------------------
 const getAssignmentTitlesForBatch = async (req, res) => {
@@ -312,6 +315,31 @@ const getAssignmentTitlesForBatch = async (req, res) => {
   }
 };
 
+const getSubmissionsForAssignment = async (req, res) => {
+  const { assignmentId } = req.params;
+
+  try {
+    // Fetch all student submissions with the assignmentId and populate the 'student' field
+    const submissions = await Assignment.find({
+      assignmentId: new mongoose.Types.ObjectId(assignmentId), // Ensure ObjectId format
+      type: 'student'  // Only student submissions
+    })
+    .populate('student', 'name email') // Populate student details (name and email)
+    .select('title fileUrl student status');  // Select relevant fields like title, student, status
+
+    // If no submissions, return message
+    if (submissions.length === 0) {
+      return res.status(404).json({ message: 'No submissions found for this assignment.' });
+    }
+
+    // Return the submissions along with student data
+    res.status(200).json(submissions);
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
 // ------------------ Export All ------------------
 module.exports = {
   uploadAssignment,
@@ -319,5 +347,6 @@ module.exports = {
   uploadStudentAssignment,
   viewStudentAssignments,
   scoreAssignment,
-  getAssignmentTitlesForBatch
+  getAssignmentTitlesForBatch,
+  getSubmissionsForAssignment
 };
