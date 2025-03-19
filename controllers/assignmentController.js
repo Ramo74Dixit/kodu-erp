@@ -241,45 +241,46 @@ const viewStudentAssignments = async (req, res) => {
 
 // ------------------ Upload Assignment (Student) ------------------
 const uploadStudentAssignment = async (req, res) => {
-  const { assignmentId, submissionLink } = req.body;
-  const batchId = req.params.batchId;
+  const { assignmentId, submissionLink } = req.body;  // Get the assignmentId and submission link from the request body
+  const batchId = req.params.batchId;  // Get batchId from params
 
-  // Validate submissionLink for GitHub or PDF URL
+  // Validate the submissionLink format (it should be a GitHub or PDF link)
   const isValidLink = /^(https?:\/\/)?(github\.com\/.+|.+\.pdf)$/.test(submissionLink);
   if (!isValidLink) {
     return res.status(400).json({ message: 'Invalid link. Please submit a GitHub repository or a PDF file URL.' });
   }
 
   try {
-    // Ensure batchId is treated as ObjectId correctly
-    const batch = await Batch.findById(new mongoose.Types.ObjectId(batchId));
-
+    // Ensure the batch exists
+    const batch = await Batch.findById(batchId);
     if (!batch) {
       return res.status(404).json({ message: 'Batch not found.' });
     }
 
-    // Ensure the assignmentId exists in the batch's assignments before submission
+    // Ensure the assignment exists
     const assignment = await Assignment.findById(assignmentId);
     if (!assignment) {
       return res.status(404).json({ message: 'Assignment not found.' });
     }
 
-    // Proceed with assignment submission
-    const studentAssignment = new Assignment({
-      assignmentId,  // Store assignmentId directly
-      title: assignment.title,  // Fetch the title directly from the assignment
-      fileUrl: submissionLink,
-      batchId,
-      student: req.user.id,  // student id should be the authenticated user
-      type: 'student',  // Ensure type is 'student' for student submissions
-      status: 'submitted'  // Set the status to submitted for this specific student
+    // Update the existing assignment with the student's submission link and status
+    assignment.submissions = assignment.submissions || []; // Initialize submissions array if it doesn't exist
+    assignment.submissions.push({
+      student: req.user.id,  // This is the student submitting the assignment
+      submissionLink,        // The link the student is submitting
+      status: 'submitted',   // Set the status to 'submitted' for this student's submission
+      submittedAt: new Date()  // Save the submission time
     });
 
-    await studentAssignment.save();
-    res.status(201).json({
+    // Save the updated assignment
+    await assignment.save();
+
+    // Return a success response
+    res.status(200).json({
       message: 'Assignment submitted successfully',
-      studentAssignment,
+      assignment,
     });
+
   } catch (error) {
     console.error('Error submitting assignment:', error);
     res.status(500).json({ message: 'Something went wrong' });
