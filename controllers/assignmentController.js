@@ -275,7 +275,7 @@ const uploadStudentAssignment = async (req, res) => {
     // Add this student's submission to the submissions array.
     // We reference the assignment's own _id instead of a separate assignmentId.
     assignment.submissions.push({
-      student: req.user.id,           // The student submitting the assignment
+      student: req.user.userId,           // The student submitting the assignment
       assignmentId: assignment._id,     // Reference the current assignment's _id
       submissionLink,                 // The link the student is submitting
       status: 'submitted',            // Set the status to 'submitted'
