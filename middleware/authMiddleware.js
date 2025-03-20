@@ -19,8 +19,8 @@ const authMiddleware = (req, res, next) => {
 
         // Attach the decoded user info (including _id, role) to the request object
         req.user = {
-            id: decoded.userId,   // Assuming 'userId' is in the decoded JWT
-            role: decoded.role,   // Assuming 'role' is in the decoded JWT
+            userId: decoded.userId,  // instead of id: decoded.userId
+            role: decoded.role,
         };
 
         // Log req.user to ensure the user details are being passed
