@@ -24,7 +24,14 @@ connectDB();
 app.use(cors({
   origin: function (origin, callback) {
     console.log("Origin:", origin);  // Log the origin to see which domains are trying to connect
-    if (origin === 'http://localhost:3000' || origin === 'https://kodu-erp.onrender.com' || origin === 'https://koduerpfrontend.onrender.com' || origin === 'https://kodu-erp-frontend.vercel.app' || !origin) {
+    if (
+      origin === 'http://localhost:3000' ||
+      origin === 'https://kodu-erp.onrender.com' ||
+      origin === 'https://koduerpfrontend.onrender.com' ||
+      origin === 'https://kodu-erp-frontend.vercel.app' ||
+      origin === 'http://3.110.163.233' ||  // New URL added here
+      !origin
+    ) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'), false);
@@ -33,6 +40,7 @@ app.use(cors({
   methods: 'GET,POST,PUT,DELETE',
   allowedHeaders: 'Content-Type, Authorization',
 }));
+
 
 
 // Middleware to parse JSON body
